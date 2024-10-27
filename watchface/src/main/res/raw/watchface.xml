@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!--
+    Copyright 2023 Google LLC
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        https://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<!--
+	Basic example of an analog watch face, demonstrating:
+
+	- Use of HourHand, MinuteHand, SecondHand
+	- Ambient behavior
+	- Sweep vs Tick second hand behavior
+-->
+<WatchFace width="450" height="450">
+  <Metadata key="CLOCK_TYPE" value="ANALOG"/>
+  <Metadata key="PREVIEW_TIME" value="10:08:32"/>
+  <Scene backgroundColor="#ffffffff">
+    <PartDraw x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+      <Arc direction="CLOCKWISE" startAngle="-150" endAngle="150" centerX="225" centerY="225" width="445" height="445">
+        <Stroke color="#ff000000" cap="ROUND" thickness="10" />
+      </Arc>
+    </PartDraw>
+
+<!--    <PartImage x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5" name="watchface" alpha="50">-->
+<!--      <Image resource="preview"/>-->
+<!--    </PartImage>-->
+    <!-- Can't use AnalogClock so need to manually create the drawing and animation of hands -->
+    <!--
+        We rotate the Group using a Transform, so we need to set the pivotY to the right spot on the
+        Group element, which is 220 / 235, given the current size and positioning of the hand and
+        dimensions of the watch face. (We want it to pivot around 225 on the watch face)
+    -->
+    <Group name="single_hand" x="220" y="5" width="5" height="235"
+        pivotX="0.5" pivotY="0.93617021276">
+      <!-- SECONDS_IN_DAY is in range 0-86399, so divide by 240 to get degrees -->
+      <Transform target="angle" value="([SECONDS_IN_DAY] / 240) - 180" />
+      <!--
+          The Group could contain anything, but in this example, we draw a simple hand. You can
+          include any PartDraw, PartImage etc, to create the effect you want
+      -->
+      <PartDraw x="0" y="0" width="5" height="235">
+        <RoundRectangle x="0" y="0" width="5" height="235"
+            cornerRadiusX="20" cornerRadiusY="20">
+          <Fill color="#FF0000" />
+        </RoundRectangle>
+      </PartDraw>
+    </Group>
+  </Scene>
+</WatchFace>
