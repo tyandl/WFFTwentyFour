@@ -27,14 +27,14 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "io.github.tyandl.twentyfour"
-    compileSdk = 33
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "io.github.tyandl.twentyfour"
         minSdk = 33
-        targetSdk = 33
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 35
+        versionCode = 3
+        versionName = "1.0.2"
     }
 
     signingConfigs {
