@@ -3,6 +3,20 @@
   <Metadata key="CLOCK_TYPE" value="ANALOG"/>
   <Metadata key="PREVIEW_TIME" value="12:00:00"/>
 
+  <UserConfigurations>
+    <ListConfiguration id="latitude" displayName="config_latitude" defaultValue="lat45">
+      <ListOption id="lat25" displayName="config_lat25" />
+      <ListOption id="lat35" displayName="config_lat35" />
+      <ListOption id="lat45" displayName="config_lat45" />
+      <ListOption id="lat50" displayName="config_lat50" />
+      <ListOption id="lat55" displayName="config_lat55" />
+      <ListOption id="lat60" displayName="config_lat60" />
+      <ListOption id="lat65" displayName="config_lat65" />
+    </ListConfiguration>
+    <BooleanConfiguration id="southern" displayName="config_hemisphere" defaultValue="FALSE" />
+    <BooleanConfiguration id="dst" displayName="config_dst" defaultValue="TRUE" />
+  </UserConfigurations>
+
   <!--
     24-hour watch face. Noon at top, midnight at bottom.
     Hand angle formula: SECONDS_IN_DAY / 240 - 180
@@ -16,52 +30,613 @@
   <Scene backgroundColor="#FF020814">
 
     <!--
-      Day/night shading approximated from DAY_OF_YEAR for Seattle (lat 47.6°N).
-
-      omega = hour-angle at sunrise/sunset, in degrees from noon (top of face).
-      Piecewise-linear cosine approximation with breakpoints at solstices/equinoxes:
-
-        omega = 62.2538
-              + 0.344223 * clamp([DAY_OF_YEAR] -   1, 0, 364)
-              - 0.029945 * clamp([DAY_OF_YEAR] -  80, 0, 285)
-              - 0.623750 * clamp([DAY_OF_YEAR] - 172, 0, 193)
-              - 0.000986 * clamp([DAY_OF_YEAR] - 264, 0, 101)
-              + 0.361453 * clamp([DAY_OF_YEAR] - 355, 0,  10)
-
-      Range: ~62° (winter, ~8h day) to ~118° (summer, ~16h day). Error ≤ 5°.
-      Sunrise arc angle = -omega + dst  (left/morning side of face)
-      Sunset  arc angle = +omega + dst  (right/evening side of face)
-
-      DST correction (Seattle observes PDT ~day 67 to ~day 305):
-        dst = 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)
-      Adds 15° (1 clock hour) during PDT, 0° during PST. ±7-day error at transitions.
-      Longitude offset (~9 min) is omitted as negligible.
-
-      WFF has no variable storage, so each combined expression is written in full.
+      Day/night shading arcs. Keyed to latitude, hemisphere, and DST configuration.
     -->
-
-    <!-- Night ring: from sunset (+omega) clockwise through midnight to sunrise (-omega).
-         Transform children set the dynamic angles; static attributes are fallback placeholders. -->
-    <PartDraw x="0" y="0" width="450" height="450">
-      <Arc
-          startAngle="90" endAngle="-90"
-           centerX="225" centerY="225" width="420" height="420">
-        <Transform target="startAngle" value="62.2538 + 0.344223 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.029945 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.623750 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.000986 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.361453 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
-        <Transform target="endAngle" value="-62.2538 - 0.344223 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.029945 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.623750 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.000986 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.361453 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
-        <Stroke color="#FF202030" thickness="20"/>
-      </Arc>
-    </PartDraw>
-
-    <!-- Daytime ring: bright arc from sunrise to sunset -->
-    <PartDraw x="0" y="0" width="450" height="450">
-      <Arc
-          startAngle="-90" endAngle="90"
-           centerX="225" centerY="225" width="420" height="420">
-        <Transform target="startAngle" value="-62.2538 - 0.344223 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.029945 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.623750 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.000986 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.361453 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
-        <Transform target="endAngle" value="62.2538 + 0.344223 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.029945 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.623750 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.000986 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.361453 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
-        <Stroke color="#80FFE878" thickness="20"/>
-      </Arc>
-    </PartDraw>
+    <Condition>
+      <Expressions>
+        <Expression name="lat25"><![CDATA[[CONFIGURATION.latitude] == "lat25"]]></Expression>
+        <Expression name="lat35"><![CDATA[[CONFIGURATION.latitude] == "lat35"]]></Expression>
+        <Expression name="lat45"><![CDATA[[CONFIGURATION.latitude] == "lat45"]]></Expression>
+        <Expression name="lat50"><![CDATA[[CONFIGURATION.latitude] == "lat50"]]></Expression>
+        <Expression name="lat55"><![CDATA[[CONFIGURATION.latitude] == "lat55"]]></Expression>
+        <Expression name="lat60"><![CDATA[[CONFIGURATION.latitude] == "lat60"]]></Expression>
+      </Expressions>
+      <Compare expression="lat25">
+        <Condition>
+          <Expressions>
+            <Expression name="south"><![CDATA[[CONFIGURATION.southern] == "TRUE"]]></Expression>
+          </Expressions>
+          <Compare expression="south">
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="101.47 - 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-101.47 + 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-101.47 + 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="101.47 - 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="101.47 - 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-101.47 + 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-101.47 + 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="101.47 - 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Compare>
+          <Default>
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="78.53 + 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-78.53 - 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-78.53 - 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="78.53 + 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="78.53 + 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-78.53 - 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-78.53 - 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="78.53 + 0.145190 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.018342 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.253696 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.001394 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.148242 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Default>
+        </Condition>
+      </Compare>
+      <Compare expression="lat35">
+        <Condition>
+          <Expressions>
+            <Expression name="south"><![CDATA[[CONFIGURATION.southern] == "TRUE"]]></Expression>
+          </Expressions>
+          <Compare expression="south">
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="107.36 - 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-107.36 + 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-107.36 + 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="107.36 - 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="107.36 - 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-107.36 + 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-107.36 + 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="107.36 - 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Compare>
+          <Default>
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="72.64 + 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-72.64 - 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-72.64 - 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="72.64 + 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="72.64 + 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-72.64 - 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-72.64 - 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="72.64 + 0.219747 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.027682 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.384130 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.002111 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.225176 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Default>
+        </Condition>
+      </Compare>
+      <Compare expression="lat45">
+        <Condition>
+          <Expressions>
+            <Expression name="south"><![CDATA[[CONFIGURATION.southern] == "TRUE"]]></Expression>
+          </Expressions>
+          <Compare expression="south">
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="115.23 - 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-115.23 + 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-115.23 + 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="115.23 - 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="115.23 - 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-115.23 + 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-115.23 + 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="115.23 - 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Compare>
+          <Default>
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="64.77 + 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-64.77 - 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-64.77 - 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="64.77 + 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="64.77 + 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-64.77 - 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-64.77 - 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="64.77 + 0.319367 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.040345 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.558044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003066 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.326088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Default>
+        </Condition>
+      </Compare>
+      <Compare expression="lat50">
+        <Condition>
+          <Expressions>
+            <Expression name="south"><![CDATA[[CONFIGURATION.southern] == "TRUE"]]></Expression>
+          </Expressions>
+          <Compare expression="south">
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="120.40 - 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-120.40 + 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-120.40 + 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="120.40 - 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="120.40 - 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-120.40 + 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-120.40 + 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="120.40 - 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Compare>
+          <Default>
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="59.60 + 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-59.60 - 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-59.60 - 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="59.60 + 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="59.60 + 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-59.60 - 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-59.60 - 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="59.60 + 0.384810 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.046549 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.676522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.003827 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.414088 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Default>
+        </Condition>
+      </Compare>
+      <Compare expression="lat55">
+        <Condition>
+          <Expressions>
+            <Expression name="south"><![CDATA[[CONFIGURATION.southern] == "TRUE"]]></Expression>
+          </Expressions>
+          <Compare expression="south">
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="127.53 - 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-127.53 + 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-127.53 + 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="127.53 - 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="127.53 - 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-127.53 + 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-127.53 + 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="127.53 - 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Compare>
+          <Default>
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="52.47 + 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-52.47 - 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-52.47 - 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="52.47 + 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="52.47 + 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-52.47 - 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-52.47 - 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="52.47 + 0.475063 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.059302 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.831522 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.004569 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.492330 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Default>
+        </Condition>
+      </Compare>
+      <Compare expression="lat60">
+        <Condition>
+          <Expressions>
+            <Expression name="south"><![CDATA[[CONFIGURATION.southern] == "TRUE"]]></Expression>
+          </Expressions>
+          <Compare expression="south">
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="137.32 - 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-137.32 + 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-137.32 + 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="137.32 - 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="137.32 - 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-137.32 + 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-137.32 + 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="137.32 - 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Compare>
+          <Default>
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="42.68 + 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-42.68 - 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-42.68 - 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="42.68 + 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="42.68 + 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-42.68 - 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-42.68 - 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="42.68 + 0.598987 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.069965 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.058044 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.006033 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.670055 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Default>
+        </Condition>
+      </Compare>
+      <Default>
+        <Condition>
+          <Expressions>
+            <Expression name="south"><![CDATA[[CONFIGURATION.southern] == "TRUE"]]></Expression>
+          </Expressions>
+          <Compare expression="south">
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="156.02 - 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-156.02 + 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-156.02 + 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="156.02 - 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="156.02 - 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-156.02 + 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-156.02 + 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="156.02 - 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Compare>
+          <Default>
+            <Condition>
+              <Expressions>
+                <Expression name="dst"><![CDATA[[CONFIGURATION.dst] == "TRUE"]]></Expression>
+              </Expressions>
+              <Compare expression="dst">
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="23.98 + 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="-23.98 - 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-23.98 - 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Transform target="endAngle" value="23.98 + 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Compare>
+              <Default>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="90" endAngle="-90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="23.98 + 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="-23.98 - 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#FF202030" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+                <PartDraw x="0" y="0" width="450" height="450">
+                  <Arc startAngle="-90" endAngle="90" centerX="225" centerY="225" width="420" height="420">
+                    <Transform target="startAngle" value="-23.98 - 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Transform target="endAngle" value="23.98 + 0.835696 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.090805 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 1.489782 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.008186 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 1.004077 * clamp([DAY_OF_YEAR] - 355, 0, 10)"/>
+                    <Stroke color="#80FFE878" thickness="20"/>
+                  </Arc>
+                </PartDraw>
+              </Default>
+            </Condition>
+          </Default>
+        </Condition>
+      </Default>
+    </Condition>
 
     <!--
       24 hour tick marks.
