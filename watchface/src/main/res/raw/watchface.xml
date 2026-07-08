@@ -274,29 +274,27 @@
     -->
 
     <!-- Slot 0: noon (0° / top) -->
-    <ComplicationSlot slotId="0" x="185" y="65" width="80" height="80"
+    <ComplicationSlot slotId="0" x="145" y="65" width="160" height="80"
                       name="noon" displayName="Noon"
-                      supportedTypes="EMPTY SHORT_TEXT SMALL_IMAGE">
-      <BoundingOval x="0" y="0" width="80" height="80" outlinePadding="1"/>
+                      supportedTypes="EMPTY SHORT_TEXT LONG_TEXT MONOCHROMATIC_IMAGE SMALL_IMAGE">
+      <BoundingRoundBox x="0" y="0" width="160" height="80" cornerRadius="40" outlinePadding="1"/>
       <Complication type="SHORT_TEXT">
-        <PartDraw x="0" y="0" width="80" height="80">
-          <Arc
-              startAngle="0" endAngle="360"
-               centerX="40" centerY="40" width="76" height="76">
+        <PartDraw x="0" y="0" width="160" height="80">
+          <RoundRectangle x="1" y="1" width="158" height="78" cornerRadiusX="39" cornerRadiusY="39">
             <Stroke color="#40FFFFFF" thickness="1"/>
-          </Arc>
+          </RoundRectangle>
         </PartDraw>
         <Condition>
           <Expressions>
             <Expression name="noon_hasIcon"><![CDATA[[COMPLICATION.MONOCHROMATIC_IMAGE] != null]]></Expression>
           </Expressions>
           <Compare expression="noon_hasIcon">
-            <PartImage x="26" y="8" width="28" height="28">
+            <PartImage x="16" y="26" width="28" height="28">
               <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
             </PartImage>
-            <PartText x="0" y="42" width="80" height="30">
+            <PartText x="52" y="0" width="100" height="80">
               <Text ellipsis="TRUE">
-                <Font family="SYNC_TO_DEVICE" size="18"
+                <Font family="SYNC_TO_DEVICE" size="22"
                     color="#CCFFFFFF">
                   <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
                 </Font>
@@ -304,8 +302,8 @@
             </PartText>
           </Compare>
           <Default>
-            <PartText x="0" y="0" width="80" height="80">
-              <Text ellipsis="TRUE">
+            <PartText x="0" y="0" width="160" height="80">
+              <Text align="CENTER" ellipsis="TRUE">
                 <Font family="SYNC_TO_DEVICE" size="22"
                     color="#CCFFFFFF">
                   <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
@@ -315,8 +313,45 @@
           </Default>
         </Condition>
       </Complication>
+      <Complication type="LONG_TEXT">
+        <Condition>
+          <Expressions>
+            <Expression name="noon_lt_hasTitle"><![CDATA[[COMPLICATION.TITLE] != null]]></Expression>
+          </Expressions>
+          <Compare expression="noon_lt_hasTitle">
+            <PartText x="8" y="8" width="144" height="22">
+              <Text align="CENTER" ellipsis="TRUE">
+                <Font family="SYNC_TO_DEVICE" size="15" color="#99FFFFFF">
+                  <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
+                </Font>
+              </Text>
+            </PartText>
+            <PartText x="8" y="34" width="144" height="40">
+              <Text align="CENTER" ellipsis="TRUE">
+                <Font family="SYNC_TO_DEVICE" size="20" color="#CCFFFFFF">
+                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                </Font>
+              </Text>
+            </PartText>
+          </Compare>
+          <Default>
+            <PartText x="8" y="0" width="144" height="80">
+              <Text align="CENTER" ellipsis="TRUE">
+                <Font family="SYNC_TO_DEVICE" size="20" color="#CCFFFFFF">
+                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                </Font>
+              </Text>
+            </PartText>
+          </Default>
+        </Condition>
+      </Complication>
+      <Complication type="MONOCHROMATIC_IMAGE">
+        <PartImage x="56" y="16" width="48" height="48">
+          <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
+        </PartImage>
+      </Complication>
       <Complication type="SMALL_IMAGE">
-        <PartImage x="8" y="8" width="64" height="64">
+        <PartImage x="48" y="8" width="64" height="64">
           <Image resource="[COMPLICATION.SMALL_IMAGE]"/>
         </PartImage>
       </Complication>
@@ -325,7 +360,7 @@
     <!-- Slot 1: 9 pm (135° clockwise from noon, lower-right) -->
     <ComplicationSlot slotId="1" x="270" y="270" width="80" height="80"
                       name="nine_pm" displayName="9 PM"
-                      supportedTypes="EMPTY SHORT_TEXT SMALL_IMAGE">
+                      supportedTypes="EMPTY SHORT_TEXT MONOCHROMATIC_IMAGE SMALL_IMAGE">
       <BoundingOval x="0" y="0" width="80" height="80" outlinePadding="1"/>
       <Complication type="SHORT_TEXT">
         <PartDraw x="0" y="0" width="80" height="80">
@@ -364,6 +399,11 @@
           </Default>
         </Condition>
       </Complication>
+      <Complication type="MONOCHROMATIC_IMAGE">
+        <PartImage x="16" y="16" width="48" height="48">
+          <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
+        </PartImage>
+      </Complication>
       <Complication type="SMALL_IMAGE">
         <PartImage x="8" y="8" width="64" height="64">
           <Image resource="[COMPLICATION.SMALL_IMAGE]"/>
@@ -374,7 +414,7 @@
     <!-- Slot 2: 3 am (225° clockwise from noon, lower-left) -->
     <ComplicationSlot slotId="2" x="100" y="270" width="80" height="80"
                       name="three_am" displayName="3 AM"
-                      supportedTypes="EMPTY SHORT_TEXT SMALL_IMAGE">
+                      supportedTypes="EMPTY SHORT_TEXT MONOCHROMATIC_IMAGE SMALL_IMAGE">
       <BoundingOval x="0" y="0" width="80" height="80" outlinePadding="1"/>
       <Complication type="SHORT_TEXT">
         <PartDraw x="0" y="0" width="80" height="80">
@@ -412,6 +452,11 @@
             </PartText>
           </Default>
         </Condition>
+      </Complication>
+      <Complication type="MONOCHROMATIC_IMAGE">
+        <PartImage x="16" y="16" width="48" height="48">
+          <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
+        </PartImage>
       </Complication>
       <Complication type="SMALL_IMAGE">
         <PartImage x="8" y="8" width="64" height="64">
