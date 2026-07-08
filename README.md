@@ -1,5 +1,7 @@
 # Twenty Four
 
+Note: send me a dm if you'd like me to add you as an internal tester on Google Play Store. I need test users.
+
 A 24-hour analog watch face for Wear OS, built with [Watch Face Format](https://developer.android.com/training/wearables/wff) (WFF).
 
 The hand completes one full rotation per day — midnight at the bottom, noon at the top. A seasonal arc shows the current day's daylight window, computed from a piecewise-linear approximation of the solar hour angle. The arc grows and shrinks with the seasons, giving you an at-a-glance sense of where you are in the day relative to sunrise and sunset.
