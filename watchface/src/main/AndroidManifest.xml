@@ -14,15 +14,18 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
   <uses-feature android:name="android.hardware.type.watch" />
+
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
   <!-- Note: hasCode is required to be false for Watch Face Format -->
   <application
       android:label="@string/watch_face_name"
-      android:hasCode="false">
+      android:hasCode="false"
+      tools:ignore="MissingApplicationIcon">
     <property
         android:name="com.google.wear.watchface.format.version"
         android:value="1" />

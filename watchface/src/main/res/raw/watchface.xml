@@ -1,59 +1,446 @@
 <?xml version="1.0"?>
-<!--
-    Copyright 2023 Google LLC
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        https://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
--->
-<!--
-	Basic example of an analog watch face, demonstrating:
-
-	- Use of HourHand, MinuteHand, SecondHand
-	- Ambient behavior
-	- Sweep vs Tick second hand behavior
--->
 <WatchFace width="450" height="450">
   <Metadata key="CLOCK_TYPE" value="ANALOG"/>
-  <Metadata key="PREVIEW_TIME" value="10:08:32"/>
-  <Scene backgroundColor="#ffffffff">
-    <PartDraw x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
-      <Arc direction="CLOCKWISE" startAngle="-150" endAngle="150" centerX="225" centerY="225" width="445" height="445">
-        <Stroke color="#ff000000" cap="ROUND" thickness="10" />
+  <Metadata key="PREVIEW_TIME" value="12:00:00"/>
+
+  <!--
+    24-hour watch face. Noon at top, midnight at bottom.
+    Hand angle formula: SECONDS_IN_DAY / 240 - 180
+      - midnight (0s)  → -180° (bottom)
+      - noon (43200s)  →    0° (top)
+    Sunrise/sunset angles use the same formula.
+    Group pivot math: all Groups have x+pivotX*width=225, y+pivotY*height=225
+    so they rotate around the face center.
+  -->
+
+  <Scene backgroundColor="#FF020814">
+
+    <!--
+      Day/night shading approximated from DAY_OF_YEAR for Seattle (lat 47.6°N).
+
+      omega = hour-angle at sunrise/sunset, in degrees from noon (top of face).
+      Piecewise-linear cosine approximation with breakpoints at solstices/equinoxes:
+
+        omega = 62.2538
+              + 0.344223 * clamp([DAY_OF_YEAR] -   1, 0, 364)
+              - 0.029945 * clamp([DAY_OF_YEAR] -  80, 0, 285)
+              - 0.623750 * clamp([DAY_OF_YEAR] - 172, 0, 193)
+              - 0.000986 * clamp([DAY_OF_YEAR] - 264, 0, 101)
+              + 0.361453 * clamp([DAY_OF_YEAR] - 355, 0,  10)
+
+      Range: ~62° (winter, ~8h day) to ~118° (summer, ~16h day). Error ≤ 5°.
+      Sunrise arc angle = -omega + dst  (left/morning side of face)
+      Sunset  arc angle = +omega + dst  (right/evening side of face)
+
+      DST correction (Seattle observes PDT ~day 67 to ~day 305):
+        dst = 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)
+      Adds 15° (1 clock hour) during PDT, 0° during PST. ±7-day error at transitions.
+      Longitude offset (~9 min) is omitted as negligible.
+
+      WFF has no variable storage, so each combined expression is written in full.
+    -->
+
+    <!-- Night ring: from sunset (+omega) clockwise through midnight to sunrise (-omega).
+         Transform children set the dynamic angles; static attributes are fallback placeholders. -->
+    <PartDraw x="0" y="0" width="450" height="450">
+      <Arc
+          startAngle="90" endAngle="-90"
+           centerX="225" centerY="225" width="420" height="420">
+        <Transform target="startAngle" value="62.2538 + 0.344223 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.029945 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.623750 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.000986 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.361453 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+        <Transform target="endAngle" value="-62.2538 - 0.344223 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.029945 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.623750 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.000986 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.361453 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+        <Stroke color="#FF202030" thickness="20"/>
       </Arc>
     </PartDraw>
 
-<!--    <PartImage x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5" name="watchface" alpha="50">-->
-<!--      <Image resource="preview"/>-->
-<!--    </PartImage>-->
-    <!-- Can't use AnalogClock so need to manually create the drawing and animation of hands -->
+    <!-- Daytime ring: bright arc from sunrise to sunset -->
+    <PartDraw x="0" y="0" width="450" height="450">
+      <Arc
+          startAngle="-90" endAngle="90"
+           centerX="225" centerY="225" width="420" height="420">
+        <Transform target="startAngle" value="-62.2538 - 0.344223 * clamp([DAY_OF_YEAR] - 1, 0, 364) + 0.029945 * clamp([DAY_OF_YEAR] - 80, 0, 285) + 0.623750 * clamp([DAY_OF_YEAR] - 172, 0, 193) + 0.000986 * clamp([DAY_OF_YEAR] - 264, 0, 101) - 0.361453 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+        <Transform target="endAngle" value="62.2538 + 0.344223 * clamp([DAY_OF_YEAR] - 1, 0, 364) - 0.029945 * clamp([DAY_OF_YEAR] - 80, 0, 285) - 0.623750 * clamp([DAY_OF_YEAR] - 172, 0, 193) - 0.000986 * clamp([DAY_OF_YEAR] - 264, 0, 101) + 0.361453 * clamp([DAY_OF_YEAR] - 355, 0, 10) + 15 * clamp([DAY_OF_YEAR] - 67, 0, 1) - 15 * clamp([DAY_OF_YEAR] - 305, 0, 1)"/>
+        <Stroke color="#80FFE878" thickness="20"/>
+      </Arc>
+    </PartDraw>
+
     <!--
-        We rotate the Group using a Transform, so we need to set the pivotY to the right spot on the
-        Group element, which is 220 / 235, given the current size and positioning of the hand and
-        dimensions of the watch face. (We want it to pivot around 225 on the watch face)
+      24 hour tick marks.
+      Each Group: x=224, y=7, width=2, height=218, pivotX=0.5, pivotY=1.0
+        pivot_x = 224 + 0.5*2 = 225 (face center)
+        pivot_y = 7 + 1.0*218 = 225 (face center)
+      Tick rectangle drawn at top of local coord space (y=0 to y=13).
+      Major ticks (noon/midnight): x=223, width=4, height=18.
+      Hour H angle: (H - 12) * 15 degrees.
     -->
-    <Group name="single_hand" x="220" y="5" width="5" height="235"
-        pivotX="0.5" pivotY="0.93617021276">
-      <!-- SECONDS_IN_DAY is in range 0-86399, so divide by 240 to get degrees -->
-      <Transform target="angle" value="([SECONDS_IN_DAY] / 240) - 180" />
-      <!--
-          The Group could contain anything, but in this example, we draw a simple hand. You can
-          include any PartDraw, PartImage etc, to create the effect you want
-      -->
-      <PartDraw x="0" y="0" width="5" height="235">
-        <RoundRectangle x="0" y="0" width="5" height="235"
-            cornerRadiusX="20" cornerRadiusY="20">
-          <Fill color="#FF0000" />
+
+    <!-- H=0  midnight  180° MAJOR -->
+    <Group name="tick_h00" x="223" y="7" width="4" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="180"/>
+      <PartDraw x="0" y="0" width="4" height="18">
+        <Rectangle x="0" y="0" width="4" height="18"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=1  1am  195° -->
+    <Group name="tick_h01" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="195"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=2  2am  210° -->
+    <Group name="tick_h02" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="210"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=3  3am  225° -->
+    <Group name="tick_h03" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="225"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=4  4am  240° -->
+    <Group name="tick_h04" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="240"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=5  5am  255° -->
+    <Group name="tick_h05" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="255"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=6  6am  270° -->
+    <Group name="tick_h06" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="270"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=7  7am  285° -->
+    <Group name="tick_h07" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="285"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=8  8am  300° -->
+    <Group name="tick_h08" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="300"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=9  9am  315° -->
+    <Group name="tick_h09" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="315"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=10  10am  330° -->
+    <Group name="tick_h10" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="330"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=11  11am  345° -->
+    <Group name="tick_h11" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="345"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=12  noon  0° MAJOR -->
+    <Group name="tick_h12" x="223" y="7" width="4" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="0"/>
+      <PartDraw x="0" y="0" width="4" height="18">
+        <Rectangle x="0" y="0" width="4" height="18"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=13  1pm  15° -->
+    <Group name="tick_h13" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="15"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=14  2pm  30° -->
+    <Group name="tick_h14" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="30"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=15  3pm  45° -->
+    <Group name="tick_h15" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="45"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=16  4pm  60° -->
+    <Group name="tick_h16" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="60"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=17  5pm  75° -->
+    <Group name="tick_h17" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="75"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=18  6pm  90° -->
+    <Group name="tick_h18" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="90"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=19  7pm  105° -->
+    <Group name="tick_h19" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="105"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=20  8pm  120° -->
+    <Group name="tick_h20" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="120"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=21  9pm  135° -->
+    <Group name="tick_h21" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="135"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=22  10pm  150° -->
+    <Group name="tick_h22" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="150"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!-- H=23  11pm  165° -->
+    <Group name="tick_h23" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="165"/>
+      <PartDraw x="0" y="0" width="2" height="13">
+        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      </PartDraw>
+    </Group>
+
+    <!--
+      Complication slots at the thirds: noon (top), 9 pm (lower-right), 3 am (lower-left).
+      All slots include EMPTY so the user can leave any slot blank.
+      Slot size 80×80, radius 120px from face center (225,225).
+      Each slot renders SHORT_TEXT (icon above value if icon present, else centered text)
+      and SMALL_IMAGE. Both use white-on-dark styling to match the face.
+    -->
+
+    <!-- Slot 0: noon (0° / top) -->
+    <ComplicationSlot slotId="0" x="185" y="65" width="80" height="80"
+                      name="noon" displayName="Noon"
+                      supportedTypes="EMPTY SHORT_TEXT SMALL_IMAGE">
+      <BoundingOval x="0" y="0" width="80" height="80" outlinePadding="1"/>
+      <Complication type="SHORT_TEXT">
+        <PartDraw x="0" y="0" width="80" height="80">
+          <Arc
+              startAngle="0" endAngle="360"
+               centerX="40" centerY="40" width="76" height="76">
+            <Stroke color="#40FFFFFF" thickness="1"/>
+          </Arc>
+        </PartDraw>
+        <Condition>
+          <Expressions>
+            <Expression name="noon_hasIcon"><![CDATA[[COMPLICATION.MONOCHROMATIC_IMAGE] != null]]></Expression>
+          </Expressions>
+          <Compare expression="noon_hasIcon">
+            <PartImage x="26" y="8" width="28" height="28">
+              <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
+            </PartImage>
+            <PartText x="0" y="42" width="80" height="30">
+              <Text ellipsis="TRUE">
+                <Font family="SYNC_TO_DEVICE" size="18"
+                    color="#CCFFFFFF">
+                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                </Font>
+              </Text>
+            </PartText>
+          </Compare>
+          <Default>
+            <PartText x="0" y="0" width="80" height="80">
+              <Text ellipsis="TRUE">
+                <Font family="SYNC_TO_DEVICE" size="22"
+                    color="#CCFFFFFF">
+                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                </Font>
+              </Text>
+            </PartText>
+          </Default>
+        </Condition>
+      </Complication>
+      <Complication type="SMALL_IMAGE">
+        <PartImage x="8" y="8" width="64" height="64">
+          <Image resource="[COMPLICATION.SMALL_IMAGE]"/>
+        </PartImage>
+      </Complication>
+    </ComplicationSlot>
+
+    <!-- Slot 1: 9 pm (135° clockwise from noon, lower-right) -->
+    <ComplicationSlot slotId="1" x="270" y="270" width="80" height="80"
+                      name="nine_pm" displayName="9 PM"
+                      supportedTypes="EMPTY SHORT_TEXT SMALL_IMAGE">
+      <BoundingOval x="0" y="0" width="80" height="80" outlinePadding="1"/>
+      <Complication type="SHORT_TEXT">
+        <PartDraw x="0" y="0" width="80" height="80">
+          <Arc
+              startAngle="0" endAngle="360"
+               centerX="40" centerY="40" width="76" height="76">
+            <Stroke color="#40FFFFFF" thickness="1"/>
+          </Arc>
+        </PartDraw>
+        <Condition>
+          <Expressions>
+            <Expression name="nine_pm_hasIcon"><![CDATA[[COMPLICATION.MONOCHROMATIC_IMAGE] != null]]></Expression>
+          </Expressions>
+          <Compare expression="nine_pm_hasIcon">
+            <PartImage x="26" y="8" width="28" height="28">
+              <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
+            </PartImage>
+            <PartText x="0" y="42" width="80" height="30">
+              <Text ellipsis="TRUE">
+                <Font family="SYNC_TO_DEVICE" size="18"
+                    color="#CCFFFFFF">
+                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                </Font>
+              </Text>
+            </PartText>
+          </Compare>
+          <Default>
+            <PartText x="0" y="0" width="80" height="80">
+              <Text ellipsis="TRUE">
+                <Font family="SYNC_TO_DEVICE" size="22"
+                    color="#CCFFFFFF">
+                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                </Font>
+              </Text>
+            </PartText>
+          </Default>
+        </Condition>
+      </Complication>
+      <Complication type="SMALL_IMAGE">
+        <PartImage x="8" y="8" width="64" height="64">
+          <Image resource="[COMPLICATION.SMALL_IMAGE]"/>
+        </PartImage>
+      </Complication>
+    </ComplicationSlot>
+
+    <!-- Slot 2: 3 am (225° clockwise from noon, lower-left) -->
+    <ComplicationSlot slotId="2" x="100" y="270" width="80" height="80"
+                      name="three_am" displayName="3 AM"
+                      supportedTypes="EMPTY SHORT_TEXT SMALL_IMAGE">
+      <BoundingOval x="0" y="0" width="80" height="80" outlinePadding="1"/>
+      <Complication type="SHORT_TEXT">
+        <PartDraw x="0" y="0" width="80" height="80">
+          <Arc
+              startAngle="0" endAngle="360"
+               centerX="40" centerY="40" width="76" height="76">
+            <Stroke color="#40FFFFFF" thickness="1"/>
+          </Arc>
+        </PartDraw>
+        <Condition>
+          <Expressions>
+            <Expression name="three_am_hasIcon"><![CDATA[[COMPLICATION.MONOCHROMATIC_IMAGE] != null]]></Expression>
+          </Expressions>
+          <Compare expression="three_am_hasIcon">
+            <PartImage x="26" y="8" width="28" height="28">
+              <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
+            </PartImage>
+            <PartText x="0" y="42" width="80" height="30">
+              <Text ellipsis="TRUE">
+                <Font family="SYNC_TO_DEVICE" size="18"
+                    color="#CCFFFFFF">
+                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                </Font>
+              </Text>
+            </PartText>
+          </Compare>
+          <Default>
+            <PartText x="0" y="0" width="80" height="80">
+              <Text ellipsis="TRUE">
+                <Font family="SYNC_TO_DEVICE" size="22"
+                    color="#CCFFFFFF">
+                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                </Font>
+              </Text>
+            </PartText>
+          </Default>
+        </Condition>
+      </Complication>
+      <Complication type="SMALL_IMAGE">
+        <PartImage x="8" y="8" width="64" height="64">
+          <Image resource="[COMPLICATION.SMALL_IMAGE]"/>
+        </PartImage>
+      </Complication>
+    </ComplicationSlot>
+
+    <!--
+      Hour hand: 24-hour rotation, noon at top.
+      x=222, width=6  → pivot_x = 222 + 0.5*6 = 225
+      y=33,  height=192 → pivot_y = 33 + 1.0*192 = 225
+      Hand tip reaches r=192 from center (inside the ring at r=198-218).
+    -->
+    <Group name="hour_hand" x="222" y="33" width="6" height="192" pivotX="0.5" pivotY="1.0">
+      <Transform target="angle" value="[SECONDS_IN_DAY] / 240 - 180"/>
+      <PartDraw x="0" y="0" width="6" height="192">
+        <RoundRectangle x="0" y="0" width="6" height="192" cornerRadiusX="3" cornerRadiusY="3">
+          <Fill color="#FFFFFFFF"/>
         </RoundRectangle>
       </PartDraw>
     </Group>
+
+    <!-- Center dot -->
+    <PartDraw x="215" y="215" width="20" height="20">
+      <RoundRectangle x="0" y="0" width="20" height="20" cornerRadiusX="10" cornerRadiusY="10">
+        <Fill color="#FFFFFFFF"/>
+      </RoundRectangle>
+    </PartDraw>
+
   </Scene>
 </WatchFace>
