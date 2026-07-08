@@ -849,7 +849,7 @@
     -->
 
     <!-- Slot 0: noon (0° / top) -->
-    <ComplicationSlot slotId="0" x="105" y="45" width="240" height="120"
+    <ComplicationSlot slotId="0" x="105" y="60" width="240" height="120"
                       name="noon" displayName="Noon"
                       supportedTypes="EMPTY SHORT_TEXT LONG_TEXT MONOCHROMATIC_IMAGE SMALL_IMAGE">
       <BoundingRoundBox x="0" y="0" width="240" height="120" cornerRadius="60" outlinePadding="1"/>
