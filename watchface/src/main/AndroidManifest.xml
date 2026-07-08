@@ -19,9 +19,7 @@
 
   <uses-feature android:name="android.hardware.type.watch" />
 
-  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-  <!-- Note: hasCode is required to be false for Watch Face Format -->
+<!-- Note: hasCode is required to be false for Watch Face Format -->
   <application
       android:label="@string/watch_face_name"
       android:hasCode="false"
