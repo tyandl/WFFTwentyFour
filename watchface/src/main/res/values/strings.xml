@@ -16,4 +16,24 @@
 -->
 <resources>
   <string name="watch_face_name">Twenty Four</string>
+
+  <!-- Latitude configuration -->
+  <string name="config_latitude">Latitude</string>
+  <string name="config_lat25">~25° (Tropics)</string>
+  <string name="config_lat35">~35° (Subtropics)</string>
+  <string name="config_lat45">~45° (Temperate)</string>
+  <string name="config_lat50">~50°</string>
+  <string name="config_lat55">~55°</string>
+  <string name="config_lat60">~60°</string>
+  <string name="config_lat65">~65° (Arctic)</string>
+
+  <!-- Hemisphere configuration -->
+  <string name="config_hemisphere">S. Hemisphere</string>
+  <string name="config_northern">Northern</string>
+  <string name="config_southern">Southern</string>
+
+  <!-- DST configuration -->
+  <string name="config_dst">Daylight Saving Time</string>
+  <string name="config_dst_on">On</string>
+  <string name="config_dst_off">Off</string>
 </resources>
