@@ -639,20 +639,24 @@
     </Condition>
 
     <!--
-      24 hour tick marks.
-      Each Group: x=224, y=7, width=2, height=218, pivotX=0.5, pivotY=1.0
-        pivot_x = 224 + 0.5*2 = 225 (face center)
+      24 hour tick marks, in four sizes. Each Group: y=7, height=218, pivotX=0.5, pivotY=1.0;
+      x is set per tier so the tick stays centered (x = 225 - width/2).
+        pivot_x = x + 0.5*width = 225 (face center)
         pivot_y = 7 + 1.0*218 = 225 (face center)
-      Tick rectangle drawn at top of local coord space (y=0 to y=13).
-      Major ticks (noon/midnight): x=223, width=4, height=18.
+      Tick rectangle drawn at top of local coord space (y=0 to y=height).
+      Tiers (x kept integer-valued — the renderer silently drops a Group with a fractional x):
+        0, 12  (noon/midnight): x=223, width=4, height=20 (biggest)
+        6, 18              :    x=223, width=4, height=17
+        3, 9, 15, 21        :    x=224, width=2, height=15
+        all others          :    x=224, width=2, height=13 (smallest)
       Hour H angle: (H - 12) * 15 degrees.
     -->
 
     <!-- H=0  midnight  180° MAJOR -->
     <Group name="tick_h00" x="223" y="7" width="4" height="218" pivotX="0.5" pivotY="1.0">
       <Transform target="angle" value="180"/>
-      <PartDraw x="0" y="0" width="4" height="18">
-        <Rectangle x="0" y="0" width="4" height="18"><Fill color="#FFFFFFFF"/></Rectangle>
+      <PartDraw x="0" y="0" width="4" height="20">
+        <Rectangle x="0" y="0" width="4" height="20"><Fill color="#FFFFFFFF"/></Rectangle>
       </PartDraw>
     </Group>
 
@@ -675,8 +679,8 @@
     <!-- H=3  3am  225° -->
     <Group name="tick_h03" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
       <Transform target="angle" value="225"/>
-      <PartDraw x="0" y="0" width="2" height="13">
-        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      <PartDraw x="0" y="0" width="2" height="15">
+        <Rectangle x="0" y="0" width="2" height="15"><Fill color="#FFFFFFFF"/></Rectangle>
       </PartDraw>
     </Group>
 
@@ -697,10 +701,10 @@
     </Group>
 
     <!-- H=6  6am  270° -->
-    <Group name="tick_h06" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+    <Group name="tick_h06" x="223" y="7" width="4" height="218" pivotX="0.5" pivotY="1.0">
       <Transform target="angle" value="270"/>
-      <PartDraw x="0" y="0" width="2" height="13">
-        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      <PartDraw x="0" y="0" width="4" height="17">
+        <Rectangle x="0" y="0" width="4" height="17"><Fill color="#FFFFFFFF"/></Rectangle>
       </PartDraw>
     </Group>
 
@@ -723,8 +727,8 @@
     <!-- H=9  9am  315° -->
     <Group name="tick_h09" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
       <Transform target="angle" value="315"/>
-      <PartDraw x="0" y="0" width="2" height="13">
-        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      <PartDraw x="0" y="0" width="2" height="15">
+        <Rectangle x="0" y="0" width="2" height="15"><Fill color="#FFFFFFFF"/></Rectangle>
       </PartDraw>
     </Group>
 
@@ -747,8 +751,8 @@
     <!-- H=12  noon  0° MAJOR -->
     <Group name="tick_h12" x="223" y="7" width="4" height="218" pivotX="0.5" pivotY="1.0">
       <Transform target="angle" value="0"/>
-      <PartDraw x="0" y="0" width="4" height="18">
-        <Rectangle x="0" y="0" width="4" height="18"><Fill color="#FFFFFFFF"/></Rectangle>
+      <PartDraw x="0" y="0" width="4" height="20">
+        <Rectangle x="0" y="0" width="4" height="20"><Fill color="#FFFFFFFF"/></Rectangle>
       </PartDraw>
     </Group>
 
@@ -771,8 +775,8 @@
     <!-- H=15  3pm  45° -->
     <Group name="tick_h15" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
       <Transform target="angle" value="45"/>
-      <PartDraw x="0" y="0" width="2" height="13">
-        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      <PartDraw x="0" y="0" width="2" height="15">
+        <Rectangle x="0" y="0" width="2" height="15"><Fill color="#FFFFFFFF"/></Rectangle>
       </PartDraw>
     </Group>
 
@@ -793,10 +797,10 @@
     </Group>
 
     <!-- H=18  6pm  90° -->
-    <Group name="tick_h18" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
+    <Group name="tick_h18" x="223" y="7" width="4" height="218" pivotX="0.5" pivotY="1.0">
       <Transform target="angle" value="90"/>
-      <PartDraw x="0" y="0" width="2" height="13">
-        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      <PartDraw x="0" y="0" width="4" height="17">
+        <Rectangle x="0" y="0" width="4" height="17"><Fill color="#FFFFFFFF"/></Rectangle>
       </PartDraw>
     </Group>
 
@@ -819,8 +823,8 @@
     <!-- H=21  9pm  135° -->
     <Group name="tick_h21" x="224" y="7" width="2" height="218" pivotX="0.5" pivotY="1.0">
       <Transform target="angle" value="135"/>
-      <PartDraw x="0" y="0" width="2" height="13">
-        <Rectangle x="0" y="0" width="2" height="13"><Fill color="#FFFFFFFF"/></Rectangle>
+      <PartDraw x="0" y="0" width="2" height="15">
+        <Rectangle x="0" y="0" width="2" height="15"><Fill color="#FFFFFFFF"/></Rectangle>
       </PartDraw>
     </Group>
 
@@ -849,42 +853,84 @@
     -->
 
     <!-- Slot 0: noon (0° / top) -->
-    <ComplicationSlot slotId="0" x="105" y="60" width="240" height="120"
+    <ComplicationSlot slotId="0" x="135" y="60" width="180" height="145"
                       name="noon" displayName="Noon"
                       supportedTypes="EMPTY SHORT_TEXT LONG_TEXT MONOCHROMATIC_IMAGE SMALL_IMAGE">
-      <BoundingRoundBox x="0" y="0" width="240" height="120" cornerRadius="60" outlinePadding="1"/>
+      <BoundingRoundBox x="0" y="0" width="180" height="145" cornerRadius="32" outlinePadding="1"/>
       <Complication type="SHORT_TEXT">
-        <PartDraw x="0" y="0" width="240" height="120">
-          <RoundRectangle x="1" y="1" width="238" height="118" cornerRadiusX="59" cornerRadiusY="59">
-            <Stroke color="#40FFFFFF" thickness="1"/>
-          </RoundRectangle>
-        </PartDraw>
         <Condition>
           <Expressions>
             <Expression name="noon_hasIcon"><![CDATA[[COMPLICATION.MONOCHROMATIC_IMAGE] != null]]></Expression>
           </Expressions>
           <Compare expression="noon_hasIcon">
-            <PartImage x="24" y="39" width="42" height="42">
-              <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
-            </PartImage>
-            <PartText x="78" y="0" width="150" height="120">
-              <Text ellipsis="TRUE">
-                <Font family="SYNC_TO_DEVICE" size="22"
-                    color="#CCFFFFFF">
-                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
-                </Font>
-              </Text>
-            </PartText>
+            <Condition>
+              <Expressions>
+                <Expression name="noon_st_icon_hasTitle"><![CDATA[[COMPLICATION.TITLE] != null]]></Expression>
+              </Expressions>
+              <Compare expression="noon_st_icon_hasTitle">
+                <PartText x="12" y="12" width="156" height="22">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="18" color="#99FFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+                <PartText x="12" y="38" width="156" height="30">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="24" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+                <PartImage x="69" y="78" width="42" height="42">
+                  <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
+                </PartImage>
+              </Compare>
+              <Default>
+                <PartText x="12" y="16" width="156" height="30">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="24" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+                <PartImage x="69" y="56" width="42" height="42">
+                  <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
+                </PartImage>
+              </Default>
+            </Condition>
           </Compare>
           <Default>
-            <PartText x="0" y="0" width="240" height="120">
-              <Text ellipsis="TRUE">
-                <Font family="SYNC_TO_DEVICE" size="33"
-                    color="#CCFFFFFF">
-                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
-                </Font>
-              </Text>
-            </PartText>
+            <Condition>
+              <Expressions>
+                <Expression name="noon_st_hasTitle"><![CDATA[[COMPLICATION.TITLE] != null]]></Expression>
+              </Expressions>
+              <Compare expression="noon_st_hasTitle">
+                <PartText x="12" y="12" width="156" height="30">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="25" color="#99FFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+                <PartText x="12" y="42" width="156" height="40">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="33" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+              </Compare>
+              <Default>
+                <PartText x="12" y="0" width="156" height="145">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="36" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+              </Default>
+            </Condition>
           </Default>
         </Condition>
       </Complication>
@@ -894,25 +940,25 @@
             <Expression name="noon_lt_hasTitle"><![CDATA[[COMPLICATION.TITLE] != null]]></Expression>
           </Expressions>
           <Compare expression="noon_lt_hasTitle">
-            <PartText x="12" y="12" width="216" height="33">
+            <PartText x="12" y="12" width="156" height="30">
               <Text ellipsis="TRUE">
-                <Font family="SYNC_TO_DEVICE" size="23" color="#99FFFFFF">
+                <Font family="SYNC_TO_DEVICE" size="25" color="#99FFFFFF">
                   <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
                 </Font>
               </Text>
             </PartText>
-            <PartText x="12" y="51" width="216" height="60">
+            <PartText x="12" y="42" width="156" height="40">
               <Text ellipsis="TRUE">
-                <Font family="SYNC_TO_DEVICE" size="30" color="#CCFFFFFF">
+                <Font family="SYNC_TO_DEVICE" size="33" color="#CCFFFFFF">
                   <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
                 </Font>
               </Text>
             </PartText>
           </Compare>
           <Default>
-            <PartText x="12" y="0" width="216" height="120">
+            <PartText x="12" y="0" width="156" height="145">
               <Text ellipsis="TRUE">
-                <Font family="SYNC_TO_DEVICE" size="30" color="#CCFFFFFF">
+                <Font family="SYNC_TO_DEVICE" size="33" color="#CCFFFFFF">
                   <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
                 </Font>
               </Text>
@@ -921,12 +967,12 @@
         </Condition>
       </Complication>
       <Complication type="MONOCHROMATIC_IMAGE">
-        <PartImage x="84" y="24" width="72" height="72">
+        <PartImage x="54" y="37" width="72" height="72">
           <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
         </PartImage>
       </Complication>
       <Complication type="SMALL_IMAGE">
-        <PartImage x="72" y="12" width="96" height="96">
+        <PartImage x="42" y="25" width="96" height="96">
           <Image resource="[COMPLICATION.SMALL_IMAGE]"/>
         </PartImage>
       </Complication>
@@ -938,13 +984,6 @@
                       supportedTypes="EMPTY SHORT_TEXT MONOCHROMATIC_IMAGE SMALL_IMAGE">
       <BoundingOval x="0" y="0" width="120" height="120" outlinePadding="1"/>
       <Complication type="SHORT_TEXT">
-        <PartDraw x="0" y="0" width="120" height="120">
-          <Arc
-              startAngle="0" endAngle="360"
-               centerX="60" centerY="60" width="114" height="114">
-            <Stroke color="#40FFFFFF" thickness="1"/>
-          </Arc>
-        </PartDraw>
         <Condition>
           <Expressions>
             <Expression name="nine_pm_hasIcon"><![CDATA[[COMPLICATION.MONOCHROMATIC_IMAGE] != null]]></Expression>
@@ -953,24 +992,68 @@
             <PartImage x="39" y="12" width="42" height="42">
               <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
             </PartImage>
-            <PartText x="0" y="63" width="120" height="45">
-              <Text ellipsis="TRUE">
-                <Font family="SYNC_TO_DEVICE" size="27"
-                    color="#CCFFFFFF">
-                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
-                </Font>
-              </Text>
-            </PartText>
+            <Condition>
+              <Expressions>
+                <Expression name="nine_pm_st_icon_hasTitle"><![CDATA[[COMPLICATION.TITLE] != null]]></Expression>
+              </Expressions>
+              <Compare expression="nine_pm_st_icon_hasTitle">
+                <PartText x="6" y="63" width="108" height="18">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="12" color="#99FFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+                <PartText x="6" y="81" width="108" height="27">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="18" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+              </Compare>
+              <Default>
+                <PartText x="0" y="63" width="120" height="45">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="27" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+              </Default>
+            </Condition>
           </Compare>
           <Default>
-            <PartText x="0" y="0" width="120" height="120">
-              <Text ellipsis="TRUE">
-                <Font family="SYNC_TO_DEVICE" size="33"
-                    color="#CCFFFFFF">
-                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
-                </Font>
-              </Text>
-            </PartText>
+            <Condition>
+              <Expressions>
+                <Expression name="nine_pm_st_hasTitle"><![CDATA[[COMPLICATION.TITLE] != null]]></Expression>
+              </Expressions>
+              <Compare expression="nine_pm_st_hasTitle">
+                <PartText x="6" y="27" width="108" height="27">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="14" color="#99FFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+                <PartText x="6" y="63" width="108" height="39">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="24" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+              </Compare>
+              <Default>
+                <PartText x="0" y="0" width="120" height="120">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="33" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+              </Default>
+            </Condition>
           </Default>
         </Condition>
       </Complication>
@@ -992,13 +1075,6 @@
                       supportedTypes="EMPTY SHORT_TEXT MONOCHROMATIC_IMAGE SMALL_IMAGE">
       <BoundingOval x="0" y="0" width="120" height="120" outlinePadding="1"/>
       <Complication type="SHORT_TEXT">
-        <PartDraw x="0" y="0" width="120" height="120">
-          <Arc
-              startAngle="0" endAngle="360"
-               centerX="60" centerY="60" width="114" height="114">
-            <Stroke color="#40FFFFFF" thickness="1"/>
-          </Arc>
-        </PartDraw>
         <Condition>
           <Expressions>
             <Expression name="three_am_hasIcon"><![CDATA[[COMPLICATION.MONOCHROMATIC_IMAGE] != null]]></Expression>
@@ -1007,24 +1083,68 @@
             <PartImage x="39" y="12" width="42" height="42">
               <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
             </PartImage>
-            <PartText x="0" y="63" width="120" height="45">
-              <Text ellipsis="TRUE">
-                <Font family="SYNC_TO_DEVICE" size="27"
-                    color="#CCFFFFFF">
-                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
-                </Font>
-              </Text>
-            </PartText>
+            <Condition>
+              <Expressions>
+                <Expression name="three_am_st_icon_hasTitle"><![CDATA[[COMPLICATION.TITLE] != null]]></Expression>
+              </Expressions>
+              <Compare expression="three_am_st_icon_hasTitle">
+                <PartText x="6" y="63" width="108" height="18">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="12" color="#99FFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+                <PartText x="6" y="81" width="108" height="27">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="18" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+              </Compare>
+              <Default>
+                <PartText x="0" y="63" width="120" height="45">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="27" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+              </Default>
+            </Condition>
           </Compare>
           <Default>
-            <PartText x="0" y="0" width="120" height="120">
-              <Text ellipsis="TRUE">
-                <Font family="SYNC_TO_DEVICE" size="33"
-                    color="#CCFFFFFF">
-                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
-                </Font>
-              </Text>
-            </PartText>
+            <Condition>
+              <Expressions>
+                <Expression name="three_am_st_hasTitle"><![CDATA[[COMPLICATION.TITLE] != null]]></Expression>
+              </Expressions>
+              <Compare expression="three_am_st_hasTitle">
+                <PartText x="6" y="27" width="108" height="27">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="14" color="#99FFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+                <PartText x="6" y="63" width="108" height="39">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="24" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+              </Compare>
+              <Default>
+                <PartText x="0" y="0" width="120" height="120">
+                  <Text ellipsis="TRUE">
+                    <Font family="SYNC_TO_DEVICE" size="33" color="#CCFFFFFF">
+                      <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                    </Font>
+                  </Text>
+                </PartText>
+              </Default>
+            </Condition>
           </Default>
         </Condition>
       </Complication>
